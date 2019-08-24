@@ -1,4 +1,4 @@
-<div class="row"> 
+<div class="row">
 <div class="col-sm-7">
 {{yield}}
 </div>
@@ -20,19 +20,19 @@
 </div>
 
 {{#if specialties}}
-  {{#if (gt rating 2)}}
+  {{#if (gt rating 0)}}
   <div class="row">
   <div class="col-sm-12">
        <p><i>Select At Least One Specialty</i> </p>
-       
+
       {{#each specialties as |spec|}}
-      
+
           <span class="text">&nbsp; {{spec.name}}:</span>
-          {{input type='checkbox' checked=spec.selected}} 
-          
+          {{input type='checkbox' checked=spec.selected}}
+
 
       {{/each}}
-      
+
   </div>
   </div>
   {{/if}}
