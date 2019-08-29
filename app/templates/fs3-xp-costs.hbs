@@ -70,7 +70,30 @@
   {{/each-in}}
   </tbody>
   </table>
-    
+
+{{/if}}
+
+{{#if model.fs3.use_advantages}}
+  <h2>Advantages</h2>
+
+  {{#if (not model.fs3.allow_sorcery_xp)}}
+     <p class="alert alert-info">Sorcery cannot be raised directly with XP. Contact staff.</p>
+  {{/if}}
+
+  <table class="table table-striped">
+
+  <thead>
+      <th>Current Level</th>
+      <th>Cost</th>
+  </thead>
+
+  <tbody>
+  {{#each-in model.fs3.xp_costs.sorcery as |currentLevel xpCost| }}
+  <tr><td>{{currentLevel}}</td><td>{{xpCost}}</td></tr>
+  {{/each-in}}
+  </tbody>
+  </table>
+
 {{/if}}
 
 {{outlet}}
