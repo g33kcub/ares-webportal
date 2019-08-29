@@ -25,13 +25,8 @@
   {{/if}}
 {{/if}}
 <hr>
-{{#if char.fs3.xp.allow_sorcery_xp}}
-
   {{fs3-xplist category="Sorcery" abilities=char.fs3.xp.sorcery xp=char.fs3.xp.xp_points learnAbility=(action "learnAbility")}}
-{{else}}
-  <p><b>Sorcery</b></p>
-    You can't raise sorcery directly with XP.  Submit a request to staff.
-{{/if}}
+
 <hr>
 
 <p><b>New Ability</b>
