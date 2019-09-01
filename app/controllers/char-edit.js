@@ -23,7 +23,11 @@ export default Controller.extend({
         });
         
         this.get('model.relationships').forEach(function(r) {
-            relationships[r.name] = { text: r.text, order: r.order, category: r.category };
+            relationships[r.name] = { text: r.text, 
+              order: r.order, 
+              category: r.category,
+              is_npc: r.is_npc,
+              npc_image: r.is_npc ? r.npc_image : null };
         });
         
         let tags = this.get('model.tags') || [];
@@ -41,6 +45,7 @@ export default Controller.extend({
             demographics: demographics,
             rp_hooks: this.get('model.rp_hooks'),
             relationships: relationships,
+            relationships_category_order: this.get('model.relationships_category_order'),
             gallery: gallery,
             profile: profile,
             bg_shared: this.get('model.bg_shared'),
@@ -60,11 +65,9 @@ export default Controller.extend({
             this.get('model.relationships').pushObject({ name: '', text: '', key: count + 1 });
         },
         fileUploaded(folder, name) {
-            folder = folder.toLowerCase();
-            name = name.toLowerCase();
             let model_folder = this.get('model.name').toLowerCase();
             if (folder === model_folder) {
-                if (!this.get('model.files').some( f => f.name.toLowerCase() == name && f.folder.toLowerCase() == model_folder )) {
+                if (!this.get('model.files').some( f => f.name == name && f.folder == model_folder )) {
                     this.get('model.files').pushObject( { name: name, path: `${folder}/${name}` });
                 }
             }
@@ -93,23 +96,23 @@ export default Controller.extend({
         },
         save() {
             if (this.get('model.profile').filter(p => p.name.length == 0).length > 0) {
-                this.get('flashMessages').danger('Profile names cannot be blank.');
+                this.flashMessages.danger('Profile names cannot be blank.');
                 return;
             }
             
             if (this.get('model.relationships').filter(r => r.name.length == 0).length > 0) {
-                this.get('flashMessages').danger('Relationship names cannot be blank.');
+                this.flashMessages.danger('Relationship names cannot be blank.');
                 return;
             }
             
-            let api = this.get('gameApi');
+            let api = this.gameApi;
             api.requestOne('profileSave', this.buildQueryDataForChar(), null)
             .then( (response) => {
                 if (response.error) {
                     return;
                 }
             
-                this.get('flashMessages').success('Saved!');
+                this.flashMessages.success('Saved!');
                 this.transitionToRoute('char', this.get('model.name'));
                 
             });

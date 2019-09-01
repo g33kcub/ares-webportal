@@ -25,10 +25,12 @@
 </table>
 
 <br>
+
+{{#if model.content_warning}}
+<div class="alert alert-danger"><b>Content Warning:</b> {{model.content_warning}}</div>
+{{/if}}
     
-<div class="ansi">
-    {{{ansi-format text=model.description}}}
-</div>
+{{{ansi-format text=model.description}}}
 
 <hr>
 
@@ -38,10 +40,14 @@
  <div>
  
      <p>{{char-icon-inline char=s.char}}</p>
-  
      {{#if s.comment}}
      {{{ansi-format text=s.comment}}}
-     {{/if}}     
+     {{/if}}
+     
+     {{#if model.can_manage}}
+     <p>  <button {{action 'cancelSignup' s.char.name}}><i class="fa fa-trash" aria-label="Cancel Signup"></i></button></p>
+     {{/if}}
+     
  
      <hr>
   </div>

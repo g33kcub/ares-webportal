@@ -1,4 +1,6 @@
+import { set } from '@ember/object';
 import Controller from '@ember/controller';
+import { localTime } from 'ares-webportal/helpers/local-time';
 import { inject as service } from '@ember/service';
 
 export default Controller.extend({
@@ -34,17 +36,19 @@ export default Controller.extend({
         this.set('newConversationList', []);
     },
     
-    onChatMessage: function(msg, timestamp) {
+    onChatMessage: function(type, msg, timestamp) {
         let splitMsg = msg.split('|');
         let channelKey = splitMsg[0];
         let channelTitle = splitMsg[1];
         let newMessage = splitMsg[2];
         let channel = this.getChannel(channelKey);
+        let localTimestamp = localTime(timestamp); 
+
         if (!channel) {
           channel = this.addPageChannel(channelKey, channelTitle);
         }
-        channel.messages.pushObject({message: newMessage, timestamp: timestamp });
-        Ember.set(channel, 'last_activity', Date.now());
+        channel.messages.pushObject({message: newMessage, timestamp: localTimestamp});
+        set(channel, 'last_activity', Date.now());
         if (channelKey === this.get('selectedChannel.key')) {
             this.scrollChatWindow();
             if (channel.is_page) {
@@ -53,22 +57,23 @@ export default Controller.extend({
         }
         else {
             let messageCount = channel.new_messages || 0;
-            Ember.set(channel, 'new_messages', messageCount + 1);
+            set(channel, 'new_messages', messageCount + 1);
 
             if (channel.is_page) {
-              this.get('gameSocket').notify(`New conversation activity in ${channelTitle}.`);
+              this.gameSocket.notify(`New conversation activity in ${channelTitle}.`);
             }
 
         }
         // No browser notifications for channels because it's too spammy.
-        this.get('gameSocket').highlightFavicon();
+        this.gameSocket.highlightFavicon();
     },
     
     addPageChannel: function(key, title) {
       let channel = { title: title, 
         key: key, 
         enabled: true, 
-        allowed: true, 
+        can_join: true, 
+        can_talk: true,
         is_page: true, 
         muted: false,
         messages: [],
@@ -80,7 +85,7 @@ export default Controller.extend({
     
     scrollChatWindow: function() {
       // Unless scrolling paused 
-      if (this.get('scrollPaused')) {
+      if (this.scrollPaused) {
         return;
       }
       
@@ -99,8 +104,10 @@ export default Controller.extend({
     
     setupCallback: function() {
         let self = this;
-        this.get('gameSocket').set('chatCallback', function(msg, timestamp) {
-            self.onChatMessage(msg, timestamp) } );
+        this.gameSocket.setupCallback('new_chat', function(type, msg, timestamp) {
+            self.onChatMessage(type, msg, timestamp) } );
+        this.gameSocket.setupCallback('new_page', function(type, msg, timestamp) {
+            self.onChatMessage(type, msg, timestamp) } );
     },
     
     getChannel: function(channelKey) {
@@ -108,7 +115,7 @@ export default Controller.extend({
     },
     
     markPageThreadRead: function(threadId) {
-      let api = this.get('gameApi');
+      let api = this.gameApi;
       api.requestOne('markPageThreadRead', { thread_id: threadId }, null)
       .then( (response) => {
           if (response.error) {
@@ -128,8 +135,8 @@ export default Controller.extend({
         
         changeChannel: function(channel) {
             this.set('selectedChannel', channel);
-            Ember.set(channel, 'new_messages', null);
-            Ember.set(channel, 'is_unread', false);
+            set(channel, 'new_messages', null);
+            set(channel, 'is_unread', false);
             if (this.get('selectedChannel.is_page'))  {
               this.markPageThreadRead(channel.key);
             } 
@@ -143,7 +150,7 @@ export default Controller.extend({
         },
         
         joinChannel: function(channelName) {
-            let api = this.get('gameApi');
+            let api = this.gameApi;
                         
             api.requestOne('joinChannel', { channel: channelName }, null)
             .then( (response) => {
@@ -155,7 +162,7 @@ export default Controller.extend({
         },
         
         leaveChannel: function() {
-            let api = this.get('gameApi');
+            let api = this.gameApi;
             let channelKey = this.get('selectedChannel.key');
                         
             api.requestOne('leaveChannel', { channel: channelKey }, null)
@@ -168,7 +175,7 @@ export default Controller.extend({
         },
         
         muteChannel: function(mute) {
-            let api = this.get('gameApi');
+            let api = this.gameApi;
             let channelKey = this.get('selectedChannel.key');
                         
             api.requestOne('muteChannel', { channel: channelKey, mute: mute }, null)
@@ -186,19 +193,19 @@ export default Controller.extend({
         },
         
         reportChat: function() {
-          let api = this.get('gameApi');
+          let api = this.gameApi;
           let channelKey = this.get('selectedChannel.key');
-          let reason = this.get('reportReason');
+          let reason = this.reportReason;
           this.set('reportReason', '');
           this.set('showReport', false);
           
           let reportedMessages = this.get('selectedChannel.messages').filter(m => m.checked);
           if (reportedMessages.length == 0) {
-            this.get('flashMessages').danger('You must select some messages to report.');
+            this.flashMessages.danger('You must select some messages to report.');
             return;
           }
           if (reason.length == 0) {
-            this.get('flashMessages').danger('You must enter a reason for the report.');
+            this.flashMessages.danger('You must enter a reason for the report.');
             return;
           }
           
@@ -210,15 +217,15 @@ export default Controller.extend({
               if (response.error) {
                   return;
               }
-              this.get('flashMessages').success('The messages have been reported to the game admin.');
+              this.flashMessages.success('The messages have been reported to the game admin.');
           });
           
         },
         
         send: function() {
-            let api = this.get('gameApi');
+            let api = this.gameApi;
             let channelKey = this.get('selectedChannel.key');
-            let message = this.get('chatMessage');
+            let message = this.chatMessage;
             this.set(`chatMessage`, '');
                       
             if (this.get('selectedChannel.is_page'))  {
@@ -244,9 +251,9 @@ export default Controller.extend({
         },
         
         startConversation: function() {
-          let api = this.get('gameApi');
-          let message = this.get('chatMessage');
-          let names = (this.get('newConversationList') || []).map(p => p.name);
+          let api = this.gameApi;
+          let message = this.chatMessage;
+          let names = (this.newConversationList || []).map(p => p.name);
           this.set(`chatMessage`, '');
           this.set('newConversation', false);
           this.set('newConversationList', []);

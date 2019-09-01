@@ -9,14 +9,14 @@
   <button class="btn btn-default visible-sm visible-xs hidden-md" type="button" data-toggle="collapse" data-target="#channelMenuCollapse" aria-expanded="false" aria-controls="channelMenuCollapse">
       <i class="fas fa-bars"></i>
       {{#if anyNewActivity}}
-      <span class="label label-pill label-primary"> <i class="fa fa-flag" aria-hidden="true"></i></span>
+      <span class="label label-pill label-primary"> <i class="fa fa-flag" aria-label="New Activity"></i></span>
       {{/if}}
     </button>
 
     <div class="collapse in" id="channelMenuCollapse">
     
     {{#each channelsByActivity as |channel|}}
-      {{#if channel.allowed}}
+      {{#if channel.can_join}}
         {{#if channel.enabled}}
           <button {{action 'changeChannel' channel}} 
              class="btn btn-default chat-button {{if (eq channel.key selectedChannel.key) 'chat-button-active' ''}}">
@@ -28,7 +28,7 @@
                 <i class="fa fa-microphone-slash"></i>
             {{/if}}
             {{#if (and channel.is_page channel.is_unread)}}
-              <span class="label label-pill label-primary"> <i class="fa fa-flag" aria-hidden="true"></i></span>
+              <span class="label label-pill label-primary"> <i class="fa fa-flag" aria-label="New Activity"></i></span>
             {{else}}
               <span class="label label-pill label-primary">{{channel.new_messages}}</span>
             {{/if}}
@@ -46,7 +46,7 @@
         <span class="btn btn-default chat-button" href="#">Add Channel <span class="caret"></span></span> </a>
         <ul class="dropdown-menu">
           {{#each model.chat as |channel|}}
-            {{#if channel.allowed}}
+            {{#if channel.can_join}}
               {{#if (not channel.enabled)}}
                 <li><a href="#" {{action 'joinChannel' channel.title}}>{{channel.title}}</a></li>
               {{/if}}
@@ -125,7 +125,11 @@
     
           <div id="chat-window">
           {{#each channel.messages as |message|}}
-              <div class="timestamp-tip">{{message.timestamp}}</div>
+              <div class="timestamp-tip">{{message.timestamp}} 
+                {{#if message.timediff}}
+                ({{message.timediff}} ago)
+                {{/if}}
+              </div>
               {{{ansi-format text=message.message}}}
           {{/each}}
           </div>
@@ -135,7 +139,9 @@
           <span class="label label-warning">Scrolling is paused!</span>
           {{/if}}
     
-          {{cmd-box value=chatMessage class="chat-box" cols="80" rows="6" onEnter=(action "send") }}
+          {{#if channel.can_talk}}
+            {{cmd-box value=chatMessage class="chat-box" cols="80" rows="6" onEnter=(action "send") }}
+          {{/if}}
 
 
       {{else}}
@@ -185,9 +191,11 @@
             </ul>
             
             
-            <div class="pull-right">
-              <button class="btn-primary btn" {{action "send"}}>Send Message</button>
-            </div>
+            {{#if channel.can_talk}}
+              <div class="pull-right">
+                <button class="btn-primary btn" {{action "send"}}>Send Message</button>
+              </div>
+            {{/if}}
     
         <div class="clearfix"></div>
     

@@ -17,7 +17,7 @@ export default Controller.extend(AuthenticatedController, SceneUpdate, {
       return this.get('model.scenes').any(s => s.is_unread );
     }.property('model.scenes.@each.is_unread'),
   
-    onSceneActivity: function(msg /* , timestamp */) {
+    onSceneActivity: function(type, msg, timestamp ) {
       let splitMsg = msg.split('|');
       let sceneId = splitMsg[0];
       let char = splitMsg[1];
@@ -26,9 +26,9 @@ export default Controller.extend(AuthenticatedController, SceneUpdate, {
       
         // For poses we can just add it to the display.  Other events require a reload.
         if (sceneId === this.get('currentScene.id')) {
-          let scene = this.get('currentScene');
+          let scene = this.currentScene;
           
-          notify = this.updateSceneData(scene, msg);
+          notify = this.updateSceneData(scene, msg, timestamp);
 
           if (currentUsername != char) {
             scene.set('is_unread', false);
@@ -38,7 +38,7 @@ export default Controller.extend(AuthenticatedController, SceneUpdate, {
           }
           
           if (notify) {
-            this.get('gameSocket').notify(`New activity from ${char} in scene ${sceneId}.`);
+            this.gameSocket.notify(`New activity from ${char} in scene ${sceneId}.`);
             this.scrollSceneWindow();
           }
           
@@ -46,10 +46,10 @@ export default Controller.extend(AuthenticatedController, SceneUpdate, {
         else {
             this.get('model.scenes').forEach(s => {
                 if (s.id === sceneId) {
-                  notify = this.updateSceneData(s, msg);
+                  notify = this.updateSceneData(s, msg, timestamp);
                   if (currentUsername != char) {
                     s.set('is_unread', true);
-                    this.get('gameSocket').notify(`New activity from ${char} in one of your other scenes (${sceneId}).`);
+                    this.gameSocket.notify(`New activity from ${char} in one of your other scenes (${sceneId}).`);
                   }
                 }
             });            
@@ -62,14 +62,13 @@ export default Controller.extend(AuthenticatedController, SceneUpdate, {
     
     setupCallback: function() {
         let self = this;
-        
-        this.get('gameSocket').set('sceneCallback', function(data) {
-            self.onSceneActivity(data) } );
+        this.gameSocket.setupCallback('new_scene_activity', function(type, msg, timestamp) {
+            self.onSceneActivity(type, msg, timestamp) } );
     },
     
     scrollSceneWindow: function() {
       // Unless scrolling paused 
-      if (this.get('scrollPaused')) {
+      if (this.scrollPaused) {
         return;
       }
       
@@ -111,7 +110,7 @@ export default Controller.extend(AuthenticatedController, SceneUpdate, {
                   let self = this;
                   setTimeout(() => self.scrollSceneWindow(), 150, self);
                   
-                  let api = this.get('gameApi');
+                  let api = this.gameApi;
                   api.requestOne('markSceneRead', { id: id }, null)
                   .then( (response) => {
                       if (response.error) {
