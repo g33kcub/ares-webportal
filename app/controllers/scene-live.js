@@ -1,3 +1,4 @@
+import $ from "jquery"
 import Controller from '@ember/controller';
 import { inject as service } from '@ember/service';
 import AuthenticatedController from 'ares-webportal/mixins/authenticated-controller';
@@ -37,8 +38,9 @@ export default Controller.extend(AuthenticatedController, SceneUpdate, {
     },
     
     scrollSceneWindow: function() {
-      // Unless scrolling paused 
-      if (this.scrollPaused) {
+      // Unless scrolling paused or edit active
+      let poseEditActive =  this.get('model.scene.poses').some(p => p.editActive);
+      if (this.scrollPaused || poseEditActive) {
         return;
       }
     

@@ -1,5 +1,5 @@
-import EmberObject from '@ember/object';
 import Component from '@ember/component';
+import { set } from '@ember/object';
 import { inject as service } from '@ember/service';
 import AuthenticatedController from 'ares-webportal/mixins/authenticated-controller';
 
@@ -9,16 +9,45 @@ export default Component.extend(AuthenticatedController, {
     confirmDeleteScenePose: false,
     confirmDeleteScene: false,
     selectLocation: false,
+    managePoseOrder: false,
+    characterCard: false,
     newLocation: null,
+    poseType: { title: 'Pose', id: 'pose' },
+    poseChar: null,
     gameApi: service(),
     flashMessages: service(),
     gameSocket: service(),
     session: service(),
+    
+    didInsertElement: function() {
+      this.set('poseChar', this.get('scene.poseable_chars')[0]);
+    },
+    
+    poseTypes: function() {
+      return [
+        { title: 'Pose', id: 'pose' },
+        { title: 'GM Emit', id: 'gm' },
+        { title: 'Scene Set', id: 'setpose' }
+      ];
+    }.property(),
+    
+    poseOrderTypes: function() {
+      return [ '3-per', 'normal' ];
+    }.property(),
+    
+    characterCardInfo: function() {
+      let participant = this.get('scene.participants').find(p => p.name == this.characterCard);
+      return participant ? participant.char_card : {};
+    }.property('characterCard'),
   
-    scenePoses: function() {
-        return this.get('scene.poses').map(p => EmberObject.create(p));  
-    }.property('scene.poses.@each.pose'),
-      
+    txtExtraInstalled: function() {
+      return this.get('scene.extras_installed').some(e => e == 'txt');
+    }.property(),
+    
+    cookiesExtraInstalled: function() {
+      return this.get('scene.extras_installed').some(e => e == 'cookies');
+    }.property(),
+    
     actions: { 
       locationSelected(loc) {
           this.set('newLocation', loc);  
@@ -44,10 +73,10 @@ export default Component.extend(AuthenticatedController, {
       },
       
       editScenePose(scenePose) { 
-          scenePose.set('editActive', true);
+          set(scenePose, 'editActive', true);
       },
       cancelScenePoseEdit(scenePose) {
-          scenePose.set('editActive', false);
+          set(scenePose, 'editActive', false);
       },
       deleteScenePose() {
           let api = this.gameApi;
@@ -79,13 +108,13 @@ export default Component.extend(AuthenticatedController, {
         });
       },
       saveScenePose(scenePose, notify) {
-          let pose = scenePose.get('raw_pose');
+          let pose = scenePose.raw_pose;
           if (pose.length === 0) {
               this.flashMessages.danger("You haven't entered anything.");
               return;
           }
-          scenePose.set('editActive', false);
-          scenePose.set('pose', pose);
+          set(scenePose, 'editActive', false);
+          set(scenePose, 'pose', pose);
 
           let api = this.gameApi;
           api.requestOne('editScenePose', { scene_id: this.get('scene.id'),
@@ -94,7 +123,7 @@ export default Component.extend(AuthenticatedController, {
               if (response.error) {
                   return;
               }
-              scenePose.set('pose', response.pose);
+              set(scenePose, 'pose', response.pose);
           });
           this.set('scenePose', '');
       },
@@ -108,7 +137,9 @@ export default Component.extend(AuthenticatedController, {
           let api = this.gameApi;
           this.set('scenePose', '');
           api.requestOne('addScenePose', { id: this.get('scene.id'),
-              pose: pose, pose_type: poseType })
+              pose: pose, 
+              pose_type: poseType,
+              pose_char: this.get('poseChar.id') })
           .then( (response) => {
               if (response.error) {
                   return;
@@ -171,6 +202,37 @@ export default Component.extend(AuthenticatedController, {
       },
       unpauseScroll() {
         this.sendAction('setScroll', true);
+      },
+      
+      poseTypeChanged(newType) {
+        this.set('poseType', newType);
+      },
+      
+      poseCharChanged(newChar) { 
+        this.set('poseChar', newChar);
+      },
+      
+      switchPoseOrderType(newType) {
+        let api = this.gameApi;
+        api.requestOne('switchPoseOrder', { id: this.get('scene.id'), type: newType }, null)
+        .then( (response) => {
+          this.set('managePoseOrder', false);
+            if (response.error) {
+                return;
+            }
+            this.set('scene.pose_order_type', newType);
+        });
+      },
+      
+      dropPoseOrder(name) {
+        let api = this.gameApi;
+        api.requestOne('dropPoseOrder', { id: this.get('scene.id'), name: name }, null)
+        .then( (response) => {
+            this.set('managePoseOrder', false);
+            if (response.error) {
+                return;
+            }
+        });
       }
     }
 });
