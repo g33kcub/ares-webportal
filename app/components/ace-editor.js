@@ -5,13 +5,13 @@ export default Component.extend({
     text: '',
     editorId: '',
     lines: 20,
+    resetEditorCallback: null, // This is a callback we provide for manually setting the text without the user typing.
     
-    updateText: function() {
-        var editor = ace.edit(this.editorId);
-        if (editor.getValue() != this.text) {
-            editor.setValue(this.text, -1);
-        }
-    }.observes('text'),
+    onReset: function(text) {
+      this.set('text', text);
+      var editor = ace.edit(this.editorId);
+      editor.setValue(this.text, -1);
+    },
     
     didInsertElement: function() {
         var editor = ace.edit(this.editorId);
@@ -24,6 +24,7 @@ export default Component.extend({
         editor.getSession().on('change', function() {
             self.set('text', editor.getValue());
         }); 
-      
+        
+        this.set('resetEditorCallback', function(text) { return self.onReset(text); });
     }
 });

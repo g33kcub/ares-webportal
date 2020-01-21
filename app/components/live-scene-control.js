@@ -1,5 +1,5 @@
 import Component from '@ember/component';
-import { set } from '@ember/object';
+import { set, computed } from '@ember/object';
 import { inject as service } from '@ember/service';
 import AuthenticatedController from 'ares-webportal/mixins/authenticated-controller';
 
@@ -8,45 +8,52 @@ export default Component.extend(AuthenticatedController, {
     rollString: null,
     confirmDeleteScenePose: false,
     confirmDeleteScene: false,
+    confirmReportScene: false,
     selectLocation: false,
     managePoseOrder: false,
     characterCard: false,
     newLocation: null,
-    poseType: { title: 'Pose', id: 'pose' },
+    reportReason: null,
+    poseType: null,
     poseChar: null,
     gameApi: service(),
     flashMessages: service(),
     gameSocket: service(),
     session: service(),
-    
+
+    init: function() {
+      this._super(...arguments);
+      this.set('poseType', { title: 'Pose', id: 'pose' });
+    },
+      
     didInsertElement: function() {
       this.set('poseChar', this.get('scene.poseable_chars')[0]);
     },
     
-    poseTypes: function() {
+    poseTypes: computed(function() {
       return [
         { title: 'Pose', id: 'pose' },
         { title: 'GM Emit', id: 'gm' },
         { title: 'Scene Set', id: 'setpose' }
       ];
-    }.property(),
+    }),
     
-    poseOrderTypes: function() {
+    poseOrderTypes: computed(function() {
       return [ '3-per', 'normal' ];
-    }.property(),
+    }),
     
-    characterCardInfo: function() {
+    characterCardInfo: computed('characterCard', function() {
       let participant = this.get('scene.participants').find(p => p.name == this.characterCard);
       return participant ? participant.char_card : {};
-    }.property('characterCard'),
+    }),
   
-    txtExtraInstalled: function() {
+    txtExtraInstalled: computed(function() {
       return this.get('scene.extras_installed').some(e => e == 'txt');
-    }.property(),
+    }),
     
-    cookiesExtraInstalled: function() {
+    cookiesExtraInstalled: computed(function() {
       return this.get('scene.extras_installed').some(e => e == 'cookies');
-    }.property(),
+    }),
     
     actions: { 
       locationSelected(loc) {
@@ -104,7 +111,7 @@ export default Component.extend(AuthenticatedController, {
                 return;
             }
             this.flashMessages.success('The scene has been deleted.');
-            this.sendAction('refresh'); 
+            this.refresh(); 
         });
       },
       saveScenePose(scenePose, notify) {
@@ -144,7 +151,7 @@ export default Component.extend(AuthenticatedController, {
               if (response.error) {
                   return;
               }
-              this.sendAction('scrollScene');
+              this.scrollScene();
           });
       },
       
@@ -166,11 +173,11 @@ export default Component.extend(AuthenticatedController, {
               }
               else if (status === 'stop') {
                   this.flashMessages.success('The scene has been stopped.');
-                  this.sendAction('refresh'); 
+                  this.refresh(); 
               }
               else if (status === 'restart') {
                   this.flashMessages.success('The scene has been restarted.');
-                  this.sendAction('refresh'); 
+                  this.refresh(); 
               }
           });
       },
@@ -188,20 +195,20 @@ export default Component.extend(AuthenticatedController, {
               this.scene.set('is_watching', option);
               
               if (option) {
-                this.sendAction('refresh'); 
+                this.refresh(); 
               }
           });
       },
       
       scrollDown() {
-        this.sendAction('scrollScene');
+        this.scrollScene();
       },
       
       pauseScroll() {
-        this.sendAction('setScroll', false);
+        this.setScroll(false);
       },
       unpauseScroll() {
-        this.sendAction('setScroll', true);
+        this.setScroll(true);
       },
       
       poseTypeChanged(newType) {
@@ -233,6 +240,20 @@ export default Component.extend(AuthenticatedController, {
                 return;
             }
         });
-      }
+      },
+      
+      reportScene() {
+        let api = this.gameApi;
+        this.set('confirmReportScene', false);
+
+        api.requestOne('reportScene', { id: this.get('scene.id'), reason: this.get('reportReason') })
+        .then( (response) => {
+            if (response.error) {
+                return;
+            }
+            this.set('reportReason', null);
+            this.flashMessages.success('Thank you.  The scene has been reported.');
+        });
+      },
     }
 });

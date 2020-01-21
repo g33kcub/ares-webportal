@@ -8,11 +8,17 @@ export default Controller.extend({
   fwdSubject: '',
   replyMessage: '',
   fwdMessage: '',
-  replyToList: [],
-  fwdToList: [],
+  replyToList: null,
+  fwdToList: null,
   newTag: '',
   confirmDelete: false,
 
+  init: function() {
+    this._super(...arguments);
+    this.set('fwdToList', []);
+    this.set('replyToList', []);
+  },
+  
   resetOnExit: function() {
     this.set('confirmDelete', false);
   },
@@ -25,7 +31,7 @@ export default Controller.extend({
     this.set('replyMessage', '');
     this.set('fwdMessage', '');
     this.set('newTag', '');
-  }.observes('model.message'),
+  },
   
   saveTags: function() {
     let api = this.gameApi;

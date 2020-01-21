@@ -15,7 +15,7 @@ export default Component.extend({
                 name = "Beginner";
                 break;
             case 2:
-                name =  "Intermediate";
+                name =  "Conversational";
                 break;
             case 3:
                 name =  "Fluent";
@@ -31,7 +31,7 @@ export default Component.extend({
                 this.set('rating',  current + 1);
             }
             this.set('ratingName', this.getRatingName());
-            this.sendAction('updated');
+            this.updated();
         },
     
         decrement() {
@@ -40,7 +40,7 @@ export default Component.extend({
                 this.set('rating',  current - 1);
             }
             this.set('ratingName', this.getRatingName());
-            this.sendAction('updated');
+            this.updated();
         }
     }
 });

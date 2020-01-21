@@ -1,26 +1,27 @@
-import EmberObject from '@ember/object';
+import EmberObject, { computed } from '@ember/object';
 import Component from '@ember/component';
 import { inject as service } from '@ember/service';
 
 export default Component.extend({
-    files: [],
+    files: null,
     folder: '',
     allowMulti: true,
     lockProperties: false,
     gameApi: service(),
     flashMessages: service(),
     
-    didInsertElement: function() {
-        this.set('files', []);
+    init: function() {
+      this._super(...arguments);
+      this.set('files', []);
     },
-    
-    fileCount: function() {
+  
+    fileCount: computed('files', function() {
         return this.get('files.length');
-    }.property('files'),
+    }),
     
-    showSelector: function() {
+    showSelector: computed('fileCount', function() {
         return !this.fileCount;
-    }.property('fileCount'),
+    }),
     
     actions: {
         filesSelected: function(e) {
@@ -89,7 +90,7 @@ export default Component.extend({
                     file.set('upload_message', 'Upload Succeeded!');                    
                     file.set('upload_success', true);
                     
-                    this.sendAction('uploaded', response.folder, response.name);
+                    this.uploaded(response.folder, response.name);
                 }
             });
         }

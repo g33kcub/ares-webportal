@@ -1,23 +1,50 @@
 import Controller from '@ember/controller';
+import { computed } from '@ember/object';
 import { inject as service } from '@ember/service';
 
 export default Controller.extend({    
     flashMessages: service(),
     gameApi: service(),
-    charErrors: [],
+    charErrors: null,
+  
+    /* These callbacks are wired up a little weird.  
+  
+       In the template initialization, we connect these properties to a property in the component:
+           {{fs3-chargen model=model updateCallback=fs3UpdateCallback ... }}
+
+       Now the component's updateCallback ---binds to---> fs3UpdateCallback, which is null
+   
+       THEN in the component's didInsertElement method, we UPDATE updateCallback to point to a function.
+  
+           this.set('updateCallback', function() { return self.onUpdate(); } );
+  
+       Because of the binding, setting updateCallback in the component ALSO sets fs3UpdateCallback here in the controller
+  
+       So now fs3UpdateCallback references a function in the component that we can call to build the query data.
+    */
     fs3UpdateCallback: null,
     fs3ValidateCallback: null,
-    
-    genders: function() {
+    customUpdateCallback: null,
+    traitsUpdateCallback: null,
+
+    init: function() {
+      this._super(...arguments);
+      this.set('charErrors', []);
+    },
+      
+    genders: computed(function() {
       let list = [];
       this.get('model.cgInfo.genders').forEach(function(g) {
         list.push({ value: g });
       });
       return list;
-    }.property(),
+    }),
 
+    traitsExtraInstalled: computed(function() {
+      return this.get('model.app.game.extra_plugins').any(e => e == 'traits');
+    }),
 
-    anyGroupMissing: function() {
+    anyGroupMissing: computed('model', function() {
         let groups = this.get('model.char.groups');
         let anyMissing = false;
         
@@ -27,11 +54,13 @@ export default Controller.extend({
             } 
         });
         return anyMissing;    
-    }.property('model'),
+    }),
     
     buildQueryDataForChar: function() {
         
       let fs3 = this.fs3UpdateCallback ? this.fs3UpdateCallback() : null;
+      let custom = this.customUpdateCallback ? this.customUpdateCallback() : null;
+      let traits = this.traitsUpdateCallback ? this.traitsUpdateCallback() : null;
       
         return { 
             id: this.get('model.char.id'),
@@ -43,7 +72,9 @@ export default Controller.extend({
             profile_image: this.get('model.char.profile_image'),
             background: this.get('model.char.background'),
             lastwill: this.get('model.char.lastwill'),
-            fs3: fs3
+            fs3: fs3,
+            custom: custom,
+            traits: traits
         };
     }, 
     

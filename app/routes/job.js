@@ -9,11 +9,20 @@ export default Route.extend(DefaultRoute, ReloadableRoute, {
     gameApi: service(),
     gameSocket: service(),
     
+    activate: function() {
+        this.controllerFor('job').setupCallback();
+    },
+
+    deactivate: function() {
+      this.gameSocket.removeCallback('job_update');
+    },
+    
     model: function(params) {
         let api = this.gameApi;
 
         return RSVP.hash({
              job:  api.requestOne('job', { id: params['id']  }),
+             abilities:  api.request('charAbilities', { id: this.get('session.data.authenticated.id') }),
              options: api.requestOne('jobOptions'),
              characters: api.requestMany('characters', { select: 'all' })
            })
@@ -22,5 +31,10 @@ export default Route.extend(DefaultRoute, ReloadableRoute, {
              return EmberObject.create(model);
            });
            
-    }    
+    },
+    setupController: function(controller, model) {
+      this._super(controller, model);
+      controller.setup();
+    }
+     
 });

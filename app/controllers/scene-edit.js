@@ -1,17 +1,18 @@
 import Controller from '@ember/controller';
+import { computed } from '@ember/object';
 import { inject as service } from '@ember/service';
 
 export default Controller.extend({
     gameApi: service(),
     flashMessages: service(),
     
-    sceneTypes: function() { 
+    sceneTypes: computed(function() { 
         return this.get('model.sceneTypes').map(p => p.get('name'));
-    }.property('model'),
+    }),
     
-    scenePrivacyValues: function() { 
+    scenePrivacyValues: computed(function() { 
         return [ 'Open', 'Private' ];
-    }.property(),
+    }),
     
     actions: {
         plotChanged(new_plot) {
@@ -48,6 +49,7 @@ export default Controller.extend({
                related_scenes: (this.get('model.scene.related_scenes') || []).map(s => s.id),
                tags: tags,
                content_warning: this.get('model.scene.content_warning'),
+               limit: this.get('model.scene.limit'),
                log: this.get('model.scene.log')}, null)
             .then( (response) => {
                 if (response.error) {

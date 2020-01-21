@@ -7,7 +7,7 @@ const Router = EmberRouter.extend({
     
  init() {
       this._super(...arguments);
-      this.on('routeDidChange', transition => {
+      this.on('routeDidChange', function() {
         window.scrollTo(0, 0);
       });
     }
@@ -27,7 +27,7 @@ Router.map(function() {
   this.route('characters', { path: '/chars'});
   this.route('char', { path: '/char/:id' });
   this.route('char-edit', { path: '/char/:id/edit' });
-  this.route('char-source', { path: '/char/:charId/source/:versionId' });
+  this.route('char-source', { path: '/char/:char_id/source/:version_id' });
   this.route('chargen');
   this.route('chargen-review');
   this.route('chat');
@@ -73,6 +73,8 @@ Router.map(function() {
   this.route('mail-message', { path: '/mail/:id'});
   this.route('mail-send');
   this.route('manage');
+  this.route('notes', { path: '/char/:id/notes' });
+  this.route('notes-edit', { path: '/char/:id/notes/edit' });
   this.route('notifications');
   this.route('play');
   this.route('players');
@@ -101,6 +103,7 @@ Router.map(function() {
   this.route('search-chars');
   this.route('search-help');
   this.route('search-forum');
+  this.route('server-info');
   this.route('setup');
   this.route('setup-colors');
   this.route('shutdown');
