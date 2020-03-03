@@ -13,8 +13,8 @@
     
   <div class="pull-right">
     
-    {{#link-to 'search-jobs'}}<i class="fa fa-search" aria-hidden="true"></i> Search Jobs{{/link-to}}  &nbsp;&nbsp;
-    {{#link-to 'job-create' class="btn btn-primary"}}Create Job{{/link-to}}
+    <LinkTo @route="search-jobs"><i class="fa fa-search" aria-hidden="true"></i> Search Jobs</LinkTo>  &nbsp;&nbsp;
+    <LinkTo @route="job-create" class="btn btn-primary">Create Job</LinkTo>
   </div>
   
    
@@ -24,8 +24,8 @@
     <h1>Requests</h1>
   
     <div class="pull-right">
-      {{#link-to 'search-jobs'}}<i class="fa fa-search" aria-hidden="true"></i> Search Requests{{/link-to}}  &nbsp;&nbsp;
-      {{#link-to 'job-create' class="btn btn-primary"}}Create Request{{/link-to}}
+      <LinkTo @route="search-jobs"><i class="fa fa-search" aria-hidden="true"></i> Search Requests</LinkTo>  &nbsp;&nbsp;
+      <LinkTo @route="job-create" class="btn btn-primary">Create Request</LinkTo>
     </div>
 
   {{/if}}
@@ -36,13 +36,10 @@
 
         <span href="#" class="btn btn-default">{{model.jobs.jobs_filter}} <span class="caret"></span></span> </a>
         <ul class="dropdown-menu">
-          <li><a href="#" {{action 'filterJobs' 'active'}}><span class="label job-category job-category-general">&nbsp;</span> ACTIVE</a></li>
-{{#if model.options.is_job_admin}}
-          <li><a href="#" {{action 'filterJobs' 'mine'}}><span class="label job-category job-category-general">&nbsp;</span> MINE</a></li>
-          <li><a href="#" {{action 'filterJobs' 'unfinished'}}><span class="label job-category job-category-general">&nbsp;</span> UNFINISHED</a></li>
-{{/if}}
-              <li><a href="#" {{action 'filterJobs' 'all'}}><span class="label job-category job-category-general">&nbsp;</span> ALL</a></li>
-          <li><a href="#" {{action 'filterJobs' 'unread'}}><span class="label job-category job-category-general">&nbsp;</span> UNREAD</a></li>
+          {{#each model.options.status_filters as |filter| }}
+            <li><a href="#" {{action 'filterJobs' filter}}><span class="label job-category job-category-general">&nbsp;</span> {{filter}}</a></li>
+          {{/each}}
+          
           {{#each model.options.category_values as |category| }}
             <li><a href="#" {{action 'filterJobs' category}}><span class="label job-category job-category-{{category}}">&nbsp;</span> {{category}}</a></li>
           {{/each}}
@@ -61,6 +58,6 @@
       </div>
   {{/if}}
   
-{{jobs-list jobs=model.jobs.jobs pages=model.jobs.pages page=page goToPage=(action "goToPage")}}
+<JobsList @jobs={{model.jobs.jobs}} @pages={{model.jobs.pages}} @page={{page}} @goToPage={{action "goToPage"}} />
 
 {{outlet}}
